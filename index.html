@@ -25,9 +25,22 @@
     <style>
         body {
             font-family: 'Kanit', sans-serif;
+            background-color: #f8fafc;
+            margin: 0;
+            padding: 0;
         }
         .selection-blue::selection {
             background-color: #dbeafe;
+        }
+        /* Fallback for white screen: show a loading message if React takes too long */
+        #root:empty::before {
+            content: "กำลังโหลด... / Loading...";
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 1.2rem;
+            color: #64748b;
         }
     </style>
 </head>
@@ -38,11 +51,16 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/framer-motion@11.0.8/dist/framer-motion.js"></script>
+    <!-- Framer Motion UMD -->
+    <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"></script>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
-        const { motion, AnimatePresence } = framerMotion;
+        // Ensure globals are available
+        const { useState, useEffect, useMemo } = React;
+        
+        // Framer Motion global is usually 'Motion'
+        const motion = window.Motion ? window.Motion.motion : { div: (props) => <div {...props} />, section: (props) => <section {...props} />, button: (props) => <button {...props} /> };
+        const AnimatePresence = window.Motion ? window.Motion.AnimatePresence : ({ children }) => <>{children}</>;
 
         const appData = {
             ui: {
@@ -84,222 +102,33 @@
                 }
             },
             levelData: {
-                "2.0": {
-                    emoji: "🦐",
-                    name: { TH: "กุ้งน้อย - มือใหม่ป้ายแดง", EN: "Shrimp - Court Hatchling" },
-                    desc: { TH: "เพิ่งเริ่มต้นการเดินทาง! คุณกำลังเรียนรู้จังหวะการสวิงและพยายามตีบอลให้ข้ามเน็ต ประสบการณ์อาจจะยังน้อย แต่ความสนุกเพิ่งจะเริ่มขึ้นเท่านั้น!", EN: "Just starting your journey! You are working on basic mechanics and getting the ball into play. Experience is limited, but the fun is just beginning!" },
-                    tournaments: { TH: ["NTRP 2.0", "NTRP 2.5"], EN: ["NTRP 2.0", "NTRP 2.5"] },
-                    tips: { TH: ["ฝึกเหวี่ยงไม้ให้จบวง (Full Finish)", "จ้องมองลูกบอลจนถึงจังหวะกระทบไม้"], EN: ["Focus on a full swing finish", "Keep your eyes on the ball until contact"] }
-                },
-                "2.5": {
-                    emoji: "🐠",
-                    name: { TH: "ปลาการ์ตูน - มือใหม่ใจสู้", EN: "Clownfish - Resilient Rookie" },
-                    desc: { TH: "น่ารักและระมัดระวัง! คุณเริ่มกะจังหวะบอลได้และประคองบอลข้ามเน็ตได้ดีขึ้นในเกมที่ตีโต้กันช้าๆ แม้การวิ่งคุมคอร์ตจะยังไม่คล่องตัว แต่สู้ไม่ถอยแน่นอน", EN: "Cautious but learning! You can judge ball flight better and sustain slow rallies. Court coverage might still be weak, but your resilience keeps you in the game." },
-                    tournaments: { TH: ["NTRP 2.5", "NTRP 3.0"], EN: ["NTRP 2.5", "NTRP 3.0"] },
-                    tips: { TH: ["ฝึกกะจังหวะการเคลื่อนที่เข้าหาบอล", "เน้นตีบอลให้ข้ามเน็ตอย่างสม่ำเสมอ"], EN: ["Practice movement and positioning", "Focus on consistent net clearance"] }
-                },
-                "3.0": {
-                    emoji: "🐬",
-                    name: { TH: "โลมา - สายแรลลี่ตีชัวร์", EN: "Dolphin - Consistent Rally Master" },
-                    desc: { TH: "ตีโต้สนุกและแน่นอน! คุณมีความสม่ำเสมอในลูกความเร็วปานกลาง แม้จะยังคุมทิศทางหรือยิงแรงๆ ได้ไม่ดั่งใจ แต่คุณใช้ความเหนียวแน่นทำให้คู่แข่งท้อไปเอง", EN: "Consistent and steady! You can sustain rallies on medium-paced shots. While struggling slightly with power and varied control, your consistency wears opponents down." },
-                    tournaments: { TH: ["NTRP 3.0", "NTRP 3.5"], EN: ["NTRP 3.0", "NTRP 3.5"] },
-                    tips: { TH: ["ฝึกคุมทิศทางบอล (ซ้าย-ขวา-กลาง)", "เริ่มฝึกตีลูกสไลซ์เพื่อเปลี่ยนจังหวะ"], EN: ["Work on directional control (Left-Right-Center)", "Start practicing slices to change pace"] }
-                },
-                "3.5": {
-                    emoji: "🦈",
-                    name: { TH: "ฉลาม - สายเทคนิคและทิศทาง", EN: "Shark - Technical & Directional" },
-                    desc: { TH: "คุมทิศทางได้แม่นยำ! คุณเริ่มคุมทิศทางและความลึกของลูกได้สม่ำเสมอขึ้น ไว้ใจจังหวะสโตรกของตัวเองได้ดี และรู้จักรอจังหวะที่คู่แข่งพลาดเพื่อชิงความได้เปรียบ", EN: "Accurate directional control! You hit with improved dependability and depth. You’ve learned to construct points patiently, waiting for the right moment to exploit opponent errors." },
-                    tournaments: { TH: ["NTRP 3.5", "NTRP 4.0"], EN: ["NTRP 3.5", "NTRP 4.0"] },
-                    tips: { TH: ["ฝึกตีบอลให้ลึกถึงเส้นหลัง (Depth Control)", "ฝึกการเคลื่อนที่ขึ้นหน้าเน็ตและวอลเลย์"], EN: ["Focus on hitting deep near the baseline", "Practice net transitions and volleys"] }
-                },
-                "4.0": {
-                    emoji: "🐙",
-                    name: { TH: "ปลาหมึก - สายรอบคอร์ตและหลากหลาย", EN: "Octopus - All-Court & Varied" },
-                    desc: { TH: "หลากหลายและไว้ใจได้! คุณมีจังหวะตีที่มั่นคงทั้งสองฝั่ง และเริ่มผสมผสานลูกเล่นอย่างวอลเลย์หรือลูกล็อบได้อย่างมีประสิทธิภาพเพื่อคุมจังหวะของเกม", EN: "Versatile and dependable! You have solid strokes on both sides and effectively integrate variety—like lobs and volleys—to dictate the tempo of the match." },
-                    tournaments: { TH: ["NTRP 4.0", "NTRP 4.5+"], EN: ["NTRP 4.0", "NTRP 4.5+"] },
-                    tips: { TH: ["ฝึกใช้สปินเพื่อคุมความหนักของลูก", "วางแผนการเล่นล่วงหน้า 2-3 ช็อต"], EN: ["Use spin to control pace and heavy balls", "Plan your points 2-3 shots ahead"] }
-                },
-                "4.5+": {
-                    emoji: "🐋",
-                    name: { TH: "วาฬเพชฌฆาต - สายพลังและสปิน", EN: "Orca - Power & Spin" },
-                    desc: { TH: "ทรงพลังและดุดัน! คุณคุมความลึกได้เด็ดขาด ใช้อาวุธหนักและสปินได้ดั่งใจ มีฟุตเวิร์คที่ยอดเยี่ยม และปรับแผนการเล่นตามจุดอ่อนคู่แข่งได้ทันที", EN: "Powerful and aggressive! You control depth with pace and spin. With sound footwork and tactical flexibility, you quickly adapt to neutralize any opponent's game plan." },
-                    tournaments: { TH: ["NTRP 4.5+", "Open (ทั่วไป)"], EN: ["NTRP 4.5+", "Open Category"] },
-                    tips: { TH: ["ฝึกเสิร์ฟเพื่อสร้างความได้เปรียบ", "เน้นความแข็งแกร่งของร่างกายและจิตใจ"], EN: ["Master the serve as a primary weapon", "Focus on physical and mental conditioning"] }
-                }
+                "2.0": { emoji: "🦐", name: { TH: "กุ้งน้อย - มือใหม่ป้ายแดง", EN: "Shrimp - Court Hatchling" }, desc: { TH: "เพิ่งเริ่มต้นการเดินทาง! คุณกำลังเรียนรู้จังหวะการสวิงและพยายามตีบอลให้ข้ามเน็ต ประสบการณ์อาจจะยังน้อย แต่ความสนุกเพิ่งจะเริ่มขึ้นเท่านั้น!", EN: "Just starting your journey! You are working on basic mechanics and getting the ball into play. Experience is limited, but the fun is just beginning!" }, tournaments: { TH: ["NTRP 2.0", "NTRP 2.5"], EN: ["NTRP 2.0", "NTRP 2.5"] }, tips: { TH: ["ฝึกเหวี่ยงไม้ให้จบวง (Full Finish)", "จ้องมองลูกบอลจนถึงจังหวะกระทบไม้"], EN: ["Focus on a full swing finish", "Keep your eyes on the ball until contact"] } },
+                "2.5": { emoji: "🐠", name: { TH: "ปลาการ์ตูน - มือใหม่ใจสู้", EN: "Clownfish - Resilient Rookie" }, desc: { TH: "น่ารักและระมัดระวัง! คุณเริ่มกะจังหวะบอลได้และประคองบอลข้ามเน็ตได้ดีขึ้นในเกมที่ตีโต้กันช้าๆ แม้การวิ่งคุมคอร์ตจะยังไม่คล่องตัว แต่สู้ไม่ถอยแน่นอน", EN: "Cautious but learning! You can judge ball flight better and sustain slow rallies. Court coverage might still be weak, but your resilience keeps you in the game." }, tournaments: { TH: ["NTRP 2.5", "NTRP 3.0"], EN: ["NTRP 2.5", "NTRP 3.0"] }, tips: { TH: ["ฝึกกะจังหวะการเคลื่อนที่เข้าหาบอล", "เน้นตีบอลให้ข้ามเน็ตอย่างสม่ำเสมอ"], EN: ["Practice movement and positioning", "Focus on consistent net clearance"] } },
+                "3.0": { emoji: "🐬", name: { TH: "โลมา - สายแรลลี่ตีชัวร์", EN: "Dolphin - Consistent Rally Master" }, desc: { TH: "ตีโต้สนุกและแน่นอน! คุณมีความสม่ำเสมอในลูกความเร็วปานกลาง แม้จะยังคุมทิศทางหรือยิงแรงๆ ได้ไม่ดั่งใจ แต่คุณใช้ความเหนียวแน่นทำให้คู่แข่งท้อไปเอง", EN: "Consistent and steady! You can sustain rallies on medium-paced shots. While struggling slightly with power and varied control, your consistency wears opponents down." }, tournaments: { TH: ["NTRP 3.0", "NTRP 3.5"], EN: ["NTRP 3.0", "NTRP 3.5"] }, tips: { TH: ["ฝึกคุมทิศทางบอล (ซ้าย-ขวา-กลาง)", "เริ่มฝึกตีลูกสไลซ์เพื่อเปลี่ยนจังหวะ"], EN: ["Work on directional control (Left-Right-Center)", "Start practicing slices to change pace"] } },
+                "3.5": { emoji: "🦈", name: { TH: "ฉลาม - สายเทคนิคและทิศทาง", EN: "Shark - Technical & Directional" }, desc: { TH: "คุมทิศทางได้แม่นยำ! คุณเริ่มคุมทิศทางและความลึกของลูกได้สม่ำเสมอขึ้น ไว้ใจจังหวะสโตรกของตัวเองได้ดี และรู้จักรอจังหวะที่คู่แข่งพลาดเพื่อชิงความได้เปรียบ", EN: "Accurate directional control! You hit with improved dependability and depth. You’ve learned to construct points patiently, waiting for the right moment to exploit opponent errors." }, tournaments: { TH: ["NTRP 3.5", "NTRP 4.0"], EN: ["NTRP 3.5", "NTRP 4.0"] }, tips: { TH: ["ฝึกตีบอลให้ลึกถึงเส้นหลัง (Depth Control)", "ฝึกการเคลื่อนที่ขึ้นหน้าเน็ตและวอลเลย์"], EN: ["Focus on hitting deep near the baseline", "Practice net transitions and volleys"] } },
+                "4.0": { emoji: "🐙", name: { TH: "ปลาหมึก - สายรอบคอร์ตและหลากหลาย", EN: "Octopus - All-Court & Varied" }, desc: { TH: "หลากหลายและไว้ใจได้! คุณมีจังหวะตีที่มั่นคงทั้งสองฝั่ง และเริ่มผสมผสานลูกเล่นอย่างวอลเลย์หรือลูกล็อบได้อย่างมีประสิทธิภาพเพื่อคุมจังหวะของเกม", EN: "Versatile and dependable! You have solid strokes on both sides and effectively integrate variety—like lobs and volleys—to dictate the tempo of the match." }, tournaments: { TH: ["NTRP 4.0", "NTRP 4.5+"], EN: ["NTRP 4.0", "NTRP 4.5+"] }, tips: { TH: ["ฝึกใช้สปินเพื่อคุมความหนักของลูก", "วางแผนการเล่นล่วงหน้า 2-3 ช็อต"], EN: ["Use spin to control pace and heavy balls", "Plan your points 2-3 shots ahead"] } },
+                "4.5+": { emoji: "🐋", name: { TH: "วาฬเพชฌฆาต - สายพลังและสปิน", EN: "Orca - Power & Spin" }, desc: { TH: "ทรงพลังและดุดัน! คุณคุมความลึกได้เด็ดขาด ใช้อาวุธหนักและสปินได้ดั่งใจ มีฟุตเวิร์คที่ยอดเยี่ยม และปรับแผนการเล่นตามจุดอ่อนคู่แข่งได้ทันที", EN: "Powerful and aggressive! You control depth with pace and spin. With sound footwork and tactical flexibility, you quickly adapt to neutralize any opponent's game plan." }, tournaments: { TH: ["NTRP 4.5+", "Open (ทั่วไป)"], EN: ["NTRP 4.5+", "Open Category"] }, tips: { TH: ["ฝึกเสิร์ฟเพื่อสร้างความได้เปรียบ", "เน้นความแข็งแกร่งของร่างกายและจิตใจ"], EN: ["Master the serve as a primary weapon", "Focus on physical and mental conditioning"] } }
             },
             quickQuestions: [
-                {
-                    id: "q1",
-                    category: { TH: "โฟร์แฮนด์", EN: "Forehand" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ไม่สม่ำเสมอ", EN: "Inconsistent" } },
-                        { id: "B", points: 2, text: { TH: "ตีโต้ได้แต่คุมทิศไม่ได้", EN: "Consistent but no control" } },
-                        { id: "C", points: 3, text: { TH: "คุมทิศและสปินได้ดี", EN: "Good control & spin" } },
-                        { id: "D", points: 4, text: { TH: "เป็นอาวุธทำแต้ม", EN: "Excellent weapon" } }
-                    ]
-                },
-                {
-                    id: "q2",
-                    category: { TH: "แบ็คแฮนด์", EN: "Backhand" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "พยายามเลี่ยง", EN: "Avoid it" } },
-                        { id: "B", points: 2, text: { TH: "ตีลูกช้าได้", EN: "Return slow balls" } },
-                        { id: "C", points: 3, text: { TH: "คุมทิศและสไลซ์ได้", EN: "Good control/slice" } },
-                        { id: "D", points: 4, text: { TH: "มั่นใจพอๆกับโฟร์แฮนด์", EN: "Confident as forehand" } }
-                    ]
-                },
-                {
-                    id: "q3",
-                    category: { TH: "เสิร์ฟ", EN: "Serve" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "เสียบ่อย", EN: "Double faults" } },
-                        { id: "B", points: 2, text: { TH: "เสิร์ฟแรกมีน้ำหนัก", EN: "Solid 1st serve" } },
-                        { id: "C", points: 3, text: { TH: "คุมจุดตกได้", EN: "Good placement" } },
-                        { id: "D", points: 4, text: { TH: "เป็นอาวุธกดดัน", EN: "Aggressive weapon" } }
-                    ]
-                },
-                {
-                    id: "q4",
-                    category: { TH: "วอลเลย์", EN: "Volley" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ไม่กล้าขึ้นเน็ต", EN: "Avoid net" } },
-                        { id: "B", points: 2, text: { TH: "วอลเลย์ลูกช้าได้", EN: "Volley slow balls" } },
-                        { id: "C", points: 3, text: { TH: "ขึ้นเน็ตและตีเหนือหัวมั่นใจ", EN: "Confident overheads" } },
-                        { id: "D", points: 4, text: { TH: "จบแต้มได้เด็ดขาด", EN: "Put away easily" } }
-                    ]
-                },
-                {
-                    id: "q5",
-                    category: { TH: "การเล่นแต้ม", EN: "Match Play" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ตีโต้สั้นๆ", EN: "Short rallies" } },
-                        { id: "B", points: 2, text: { TH: "ตีเสียเองบ่อยเมื่อโดนบุก", EN: "Unforced errors" } },
-                        { id: "C", points: 3, text: { TH: "สม่ำเสมอและมีแทคติก", EN: "Consistent tactics" } },
-                        { id: "D", points: 4, text: { TH: "อ่านเกมและแก้เกมได้ดี", EN: "Adjust game plan" } }
-                    ]
-                }
+                { id: "q1", category: { TH: "โฟร์แฮนด์", EN: "Forehand" }, options: [{ id: "A", points: 1, text: { TH: "ไม่สม่ำเสมอ", EN: "Inconsistent" } }, { id: "B", points: 2, text: { TH: "ตีโต้ได้แต่คุมทิศไม่ได้", EN: "Consistent but no control" } }, { id: "C", points: 3, text: { TH: "คุมทิศและสปินได้ดี", EN: "Good control & spin" } }, { id: "D", points: 4, text: { TH: "เป็นอาวุธทำแต้ม", EN: "Excellent weapon" } }] },
+                { id: "q2", category: { TH: "แบ็คแฮนด์", EN: "Backhand" }, options: [{ id: "A", points: 1, text: { TH: "พยายามเลี่ยง", EN: "Avoid it" } }, { id: "B", points: 2, text: { TH: "ตีลูกช้าได้", EN: "Return slow balls" } }, { id: "C", points: 3, text: { TH: "คุมทิศและสไลซ์ได้", EN: "Good control/slice" } }, { id: "D", points: 4, text: { TH: "มั่นใจพอๆกับโฟร์แฮนด์", EN: "Confident as forehand" } }] },
+                { id: "q3", category: { TH: "เสิร์ฟ", EN: "Serve" }, options: [{ id: "A", points: 1, text: { TH: "เสียบ่อย", EN: "Double faults" } }, { id: "B", points: 2, text: { TH: "เสิร์ฟแรกมีน้ำหนัก", EN: "Solid 1st serve" } }, { id: "C", points: 3, text: { TH: "คุมจุดตกได้", EN: "Good placement" } }, { id: "D", points: 4, text: { TH: "เป็นอาวุธกดดัน", EN: "Aggressive weapon" } }] },
+                { id: "q4", category: { TH: "วอลเลย์", EN: "Volley" }, options: [{ id: "A", points: 1, text: { TH: "ไม่กล้าขึ้นเน็ต", EN: "Avoid net" } }, { id: "B", points: 2, text: { TH: "วอลเลย์ลูกช้าได้", EN: "Volley slow balls" } }, { id: "C", points: 3, text: { TH: "ขึ้นเน็ตและตีเหนือหัวมั่นใจ", EN: "Confident overheads" } }, { id: "D", points: 4, text: { TH: "จบแต้มได้เด็ดขาด", EN: "Put away easily" } }] },
+                { id: "q5", category: { TH: "การเล่นแต้ม", EN: "Match Play" }, options: [{ id: "A", points: 1, text: { TH: "ตีโต้สั้นๆ", EN: "Short rallies" } }, { id: "B", points: 2, text: { TH: "ตีเสียเองบ่อยเมื่อโดนบุก", EN: "Unforced errors" } }, { id: "C", points: 3, text: { TH: "สม่ำเสมอและมีแทคติก", EN: "Consistent tactics" } }, { id: "D", points: 4, text: { TH: "อ่านเกมและแก้เกมได้ดี", EN: "Adjust game plan" } }] }
             ],
             deepQuestions: [
-                {
-                    id: "d1",
-                    category: { TH: "โฟร์แฮนด์เมื่อถูกกดดัน", EN: "Forehand Under Pressure" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ฟอร์มหลุดทันทีเมื่อลูกมาเร็วหรือลึก", EN: "Mechanics break down against heavy pace or depth" } },
-                        { id: "B", points: 2, text: { TH: "ตีโต้ลูกช้าได้ลึก แต่ลูกจะสั้นลงเมื่อโดนบุก", EN: "Can hit deep on slow balls, but lands short when pressured" } },
-                        { id: "C", points: 3, text: { TH: "รักษาความลึกได้ดีแม้ต้องวิ่งตี", EN: "Maintains good depth even when hitting on the run" } },
-                        { id: "D", points: 4, text: { TH: "ใช้ท็อปสปินหนักๆ สวนกลับเพื่อชิงความได้เปรียบ", EN: "Neutralizes pressure with heavy topspin and regains control" } }
-                    ]
-                },
-                {
-                    id: "d2",
-                    category: { TH: "ความเด็ดขาดของโฟร์แฮนด์", EN: "Forehand Intent & Direction" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "เน้นตีประคองให้ข้ามเน็ตไปก่อน", EN: "Mostly just pushing the ball back over the net" } },
-                        { id: "B", points: 2, text: { TH: "ตีฉีก (Crosscourt) ได้ แต่ขนานเส้นยังมีพลาด", EN: "Solid crosscourt, but down-the-line is still risky" } },
-                        { id: "C", points: 3, text: { TH: "เปลี่ยนทางลูกด้วยท็อปสปินได้อย่างมั่นใจ", EN: "Confidently changes direction with heavy topspin" } },
-                        { id: "D", points: 4, text: { TH: "ใช้ทำแต้มวินเนอร์ (Inside-out / Down-the-line) ได้", EN: "Can dictate and hit winners (inside-out or down-the-line)" } }
-                    ]
-                },
-                {
-                    id: "d3",
-                    category: { TH: "การเอาตัวรอดฝั่งแบ็คแฮนด์", EN: "Backhand Defense" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "พยายามวิ่งอ้อมไปตีโฟร์แฮนด์แทนเสมอ", EN: "Constantly runs around it to hit a forehand instead" } },
-                        { id: "B", points: 2, text: { TH: "บล็อกหรือผลักลูกกลับไปได้เมื่อโดนบุก", EN: "Can block or push the ball back to stay in the point" } },
-                        { id: "C", points: 3, text: { TH: "ตีโต้ลูกความเร็วปานกลางได้ต่อเนื่องไม่เสียเอง", EN: "Very consistent during moderate-paced rallies" } },
-                        { id: "D", points: 4, text: { TH: "เปลี่ยนจากรับเป็นรุกด้วยแบ็คแฮนด์ได้", EN: "Can comfortably transition from defense to offense" } }
-                    ]
-                },
-                {
-                    id: "d4",
-                    category: { TH: "ความหลากหลายของแบ็คแฮนด์", EN: "Backhand Variety" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ตีได้รูปแบบเดียว (มักจะตีแบนๆ)", EN: "One-dimensional, usually just hitting flat" } },
-                        { id: "B", points: 2, text: { TH: "ใช้สไลซ์เพื่อซื้อเวลา แต่ลูกมักจะลอย", EN: "Uses a defensive slice to buy time, but it often floats" } },
-                        { id: "C", points: 3, text: { TH: "สไลซ์ลูกเลียดเน็ตเพื่อเปลี่ยนจังหวะเกมได้", EN: "Can hit a low, biting slice to change the pace of the rally" } },
-                        { id: "D", points: 4, text: { TH: "สลับตีท็อปสปินหนักๆ และสไลซ์รุกได้อย่างเนียนตา", EN: "Seamlessly mixes heavy topspin and aggressive slices" } }
-                    ]
-                },
-                {
-                    id: "d5",
-                    category: { TH: "อาวุธเสิร์ฟแรก", EN: "1st Serve Mechanics" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "วงสวิงยังไม่สมบูรณ์ โยนบอล (Toss) ไม่นิ่ง", EN: "Inconsistent toss and incomplete service motion" } },
-                        { id: "B", points: 2, text: { TH: "จังหวะต่อเนื่องขึ้น เน้นเสิร์ฟเข้ากลางคอร์ต", EN: "Fluid motion, but mostly aims down the middle" } },
-                        { id: "C", points: 3, text: { TH: "เลือกเสิร์ฟจี้ตัว, ฉีกออกกว้าง, หรือมุม T ได้", EN: "Can effectively target the body, wide, or down the T" } },
-                        { id: "D", points: 4, text: { TH: "ได้แต้มฟรีบ่อย (Ace/Service Winner) ใช้คุมเกมได้", EN: "Consistently wins free points (aces/service winners) to dictate play" } }
-                    ]
-                },
-                {
-                    id: "d6",
-                    category: { TH: "คุณภาพเสิร์ฟสอง", EN: "2nd Serve Quality" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "เบามากจนคู่แข่งดักตบได้สบาย", EN: "Lacks pace and depth, easily attacked by opponents" } },
-                        { id: "B", points: 2, text: { TH: "เสิร์ฟลงชัวๆ แต่ขาดสปิน ลูกมักจะตื้น", EN: "Reliable but lacks spin, so it tends to sit up" } },
-                        { id: "C", points: 3, text: { TH: "มีท็อปสปิน/คิกเสิร์ฟ ลูกกระดอนสูงรับยากขึ้น", EN: "Hits with good topspin or kick, making it bounce high" } },
-                        { id: "D", points: 4, text: { TH: "คิกเสิร์ฟหนักหน่วง หรือสไลซ์ฉีกหนีคู่แข่งได้", EN: "Hits heavy kick or slice serves, immediately putting opponents on defense" } }
-                    ]
-                },
-                {
-                    id: "d7",
-                    category: { TH: "การรับเสิร์ฟ (Return of Serve)", EN: "Return of Serve" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "เจอลูกเสิร์ฟเร็วๆ จะแหย่ไม้รับไม่ค่อยทัน", EN: "Struggles with fast pace, often just blocking wildly" } },
-                        { id: "B", points: 2, text: { TH: "รีเทิร์นลูกเสิร์ฟทั่วไปได้ แต่คุมทิศทางลำบาก", EN: "Can return average serves consistently, but struggles with placement" } },
-                        { id: "C", points: 3, text: { TH: "ก้าวเข้าสนามเพื่อตบเสิร์ฟสองที่อ่อนแอได้", EN: "Confidently steps in to attack weak second serves" } },
-                        { id: "D", points: 4, text: { TH: "รับลูกเสิร์ฟแรงๆ ให้กลับไปตกลึกท้ายคอร์ตได้", EN: "Easily neutralizes heavy first serves with deep returns" } }
-                    ]
-                },
-                {
-                    id: "d8",
-                    category: { TH: "ทักษะหน้าเน็ต (Volley)", EN: "Net Play & Transition" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "จับไม้แบบโฟร์แฮนด์มารับวอลเลย์ รู้สึกไม่มั่นใจ", EN: "Uncomfortable at the net, often volleying with a groundstroke grip" } },
-                        { id: "B", points: 2, text: { TH: "วอลเลย์ลูกระดับอกได้ แต่ลูกต่ำๆ จะงัดไม่ค่อยขึ้น", EN: "Solid on chest-high volleys, but struggles digging out low ones" } },
-                        { id: "C", points: 3, text: { TH: "จับแบบ Continental ต่อยลูกวอลเลย์คุมทิศทางได้", EN: "Uses a continental grip with good directional control and punch" } },
-                        { id: "D", points: 4, text: { TH: "หยอดหน้าเน็ต (Drop Volley) และจบแต้มได้เฉียบขาด", EN: "Decisively finishes points with crisp volleys and touch (drop volleys)" } }
-                    ]
-                },
-                {
-                    id: "d9",
-                    category: { TH: "ลูกตบเหนือหัว (Overhead)", EN: "Overhead Execution" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "กะจังหวะพลาดบ่อย หรือต้องปล่อยให้ลูกตกพื้นก่อน", EN: "Poor timing, usually lets the ball bounce before hitting" } },
-                        { id: "B", points: 2, text: { TH: "ตบลูกง่ายๆ ได้ แต่มักจะพลาดถ้าต้องถอยหลังตบ", EN: "Can put away easy lobs, but struggles when backpedaling" } },
-                        { id: "C", points: 3, text: { TH: "ตบลูกได้ชัวร์แม้ยืนอยู่บริเวณเส้นเสิร์ฟ (Service Line)", EN: "Very reliable, even when hitting overheads from the service line" } },
-                        { id: "D", points: 4, text: { TH: "กระโดดตบ (Scissor kick) หรือทำแต้มได้จากทุกจุด", EN: "Highly offensive; can hit scissor-kick overheads from almost anywhere" } }
-                    ]
-                },
-                {
-                    id: "d10",
-                    category: { TH: "การงัดลูกล็อบและการตั้งรับ", EN: "Defense & Lobs" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "เมื่อเสียเปรียบ มักจะตีลูกโด่งสั้นๆ โดนดักตบ", EN: "Throws up short, defensive lobs that get easily put away" } },
-                        { id: "B", points: 2, text: { TH: "งัดลูกล็อบโด่งเพื่อซื้อเวลาให้ตัวเองกลับมาตั้งหลักได้", EN: "Hits high, deep defensive lobs to buy time and reset the point" } },
-                        { id: "C", points: 3, text: { TH: "ตีลูกท็อปสปินล็อบข้ามหัวคนขึ้นเน็ตได้", EN: "Can hit offensive topspin lobs effectively over the net player" } },
-                        { id: "D", points: 4, text: { TH: "วิ่งสุดคอร์ตแล้วสวนกลับด้วย Passing Shot ได้ลุ้นเสมอ", EN: "Exceptional defense; constantly hits passing shots while on the dead run" } }
-                    ]
-                },
-                {
-                    id: "d11",
-                    category: { TH: "จังหวะฝีเท้า (Footwork)", EN: "Footwork & Movement" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "ตีเสร็จแล้วมักจะยืนดูบอล ไม่วิ่งกลับมารอตรงกลาง", EN: "Tends to ball-watch after hitting, leading to slow recovery" } },
-                        { id: "B", points: 2, text: { TH: "ครอบคลุมพื้นที่คอร์ตเดี่ยวได้ดี แต่ก้าวเท้ายังช้า", EN: "Covers the court reasonably well, but can be a bit heavy-footed" } },
-                        { id: "C", points: 3, text: { TH: "ทำ Split-step สม่ำเสมอ และกลับเข้าตำแหน่งเร็ว", EN: "Always uses a split-step and recovers quickly to the center" } },
-                        { id: "D", points: 4, text: { TH: "ออกตัวเร็วมาก สไลด์เท้าหรือปรับก้าวเล็กๆ ก่อนตีได้เนียน", EN: "Explosive first step with excellent micro-adjustments before striking" } }
-                    ]
-                },
-                {
-                    id: "d12",
-                    category: { TH: "วิสัยทัศน์และแทคติก", EN: "Match IQ & Tactics" },
-                    options: [
-                        { id: "A", points: 1, text: { TH: "โฟกัสแค่วงสวิงตัวเอง ไม่ทันได้สังเกตคู่แข่ง", EN: "Focuses entirely on own swing mechanics, not the opponent" } },
-                        { id: "B", points: 2, text: { TH: "เล่นแบบ Play Safe ตีโต้ไปเรื่อยๆ รอคู่แข่งพลาด", EN: "Plays 'safe' and mostly just waits for the opponent to make an error" } },
-                        { id: "C", points: 3, text: { TH: "หาจุดอ่อนคู่แข่งเจอ (เช่น แบ็คแฮนด์อ่อน) และเจาะตรงนั้น", EN: "Quickly identifies and consistently targets the opponent's weaknesses" } },
-                        { id: "D", points: 4, text: { TH: "สร้างรูปแบบการเข้าทำได้ และเปลี่ยนแผนแก้เกมได้ทันที", EN: "Strategically constructs points and easily adapts tactics mid-match" } }
-                    ]
-                }
+                { id: "d1", category: { TH: "โฟร์แฮนด์เมื่อถูกกดดัน", EN: "Forehand Under Pressure" }, options: [{ id: "A", points: 1, text: { TH: "ฟอร์มหลุดทันทีเมื่อลูกมาเร็วหรือลึก", EN: "Mechanics break down against heavy pace or depth" } }, { id: "B", points: 2, text: { TH: "ตีโต้ลูกช้าได้ลึก แต่ลูกจะสั้นลงเมื่อโดนบุก", EN: "Can hit deep on slow balls, but lands short when pressured" } }, { id: "C", points: 3, text: { TH: "รักษาความลึกได้ดีแม้ต้องวิ่งตี", EN: "Maintains good depth even when hitting on the run" } }, { id: "D", points: 4, text: { TH: "ใช้ท็อปสปินหนักๆ สวนกลับเพื่อชิงความได้เปรียบ", EN: "Neutralizes pressure with heavy topspin and regains control" } }] },
+                { id: "d2", category: { TH: "ความเด็ดขาดของโฟร์แฮนด์", EN: "Forehand Intent & Direction" }, options: [{ id: "A", points: 1, text: { TH: "เน้นตีประคองให้ข้ามเน็ตไปก่อน", EN: "Mostly just pushing the ball back over the net" } }, { id: "B", points: 2, text: { TH: "ตีฉีก (Crosscourt) ได้ แต่ขนานเส้นยังมีพลาด", EN: "Solid crosscourt, but down-the-line is still risky" } }, { id: "C", points: 3, text: { TH: "เปลี่ยนทางลูกด้วยท็อปสปินได้อย่างมั่นใจ", EN: "Confidently changes direction with heavy topspin" } }, { id: "D", points: 4, text: { TH: "ใช้ทำแต้มวินเนอร์ (Inside-out / Down-the-line) ได้", EN: "Can dictate and hit winners (inside-out or down-the-line)" } }] },
+                { id: "d3", category: { TH: "การเอาตัวรอดฝั่งแบ็คแฮนด์", EN: "Backhand Defense" }, options: [{ id: "A", points: 1, text: { TH: "พยายามวิ่งอ้อมไปตีโฟร์แฮนด์แทนเสมอ", EN: "Constantly runs around it to hit a forehand instead" } }, { id: "B", points: 2, text: { TH: "บล็อกหรือผลักลูกกลับไปได้เมื่อโดนบุก", EN: "Can block or push the ball back to stay in the point" } }, { id: "C", points: 3, text: { TH: "ตีโต้ลูกความเร็วปานกลางได้ต่อเนื่องไม่เสียเอง", EN: "Very consistent during moderate-paced rallies" } }, { id: "D", points: 4, text: { TH: "เปลี่ยนจากรับเป็นรุกด้วยแบ็คแฮนด์ได้", EN: "Can comfortably transition from defense to offense" } }] },
+                { id: "d4", category: { TH: "ความหลากหลายของแบ็คแฮนด์", EN: "Backhand Variety" }, options: [{ id: "A", points: 1, text: { TH: "ตีได้รูปแบบเดียว (มักจะตีแบนๆ)", EN: "One-dimensional, usually just hitting flat" } }, { id: "B", points: 2, text: { TH: "ใช้สไลซ์เพื่อซื้อเวลา แต่ลูกมักจะลอย", EN: "Uses a defensive slice to buy time, but it often floats" } }, { id: "C", points: 3, text: { TH: "สไลซ์ลูกเลียดเน็ตเพื่อเปลี่ยนจังหวะเกมได้", EN: "Can hit a low, biting slice to change the pace of the rally" } }, { id: "D", points: 4, text: { TH: "สลับตีท็อปสปินหนักๆ และสไลซ์รุกได้อย่างเนียนตา", EN: "Seamlessly mixes heavy topspin and aggressive slices" } }] },
+                { id: "d5", category: { TH: "อาวุธเสิร์ฟแรก", EN: "1st Serve Mechanics" }, options: [{ id: "A", points: 1, text: { TH: "วงสวิงยังไม่สมบูรณ์ โยนบอล (Toss) ไม่นิ่ง", EN: "Inconsistent toss and incomplete service motion" } }, { id: "B", points: 2, text: { TH: "จังหวะต่อเนื่องขึ้น เน้นเสิร์ฟเข้ากลางคอร์ต", EN: "Fluid motion, but mostly aims down the middle" } }, { id: "C", points: 3, text: { TH: "เลือกเสิร์ฟจี้ตัว, ฉีกออกกว้าง, หรือมุม T ได้", EN: "Can effectively target the body, wide, or down the T" } }, { id: "D", points: 4, text: { TH: "ได้แต้มฟรีบ่อย (Ace/Service Winner) ใช้คุมเกมได้", EN: "Consistently wins free points (aces/service winners) to dictate play" } }] },
+                { id: "d6", category: { TH: "คุณภาพเสิร์ฟสอง", EN: "2nd Serve Quality" }, options: [{ id: "A", points: 1, text: { TH: "เบามากจนคู่แข่งดักตบได้สบาย", EN: "Lacks pace and depth, easily attacked by opponents" } }, { id: "B", points: 2, text: { TH: "เสิร์ฟลงชัวๆ แต่ขาดสปิน ลูกมักจะตื้น", EN: "Reliable but lacks spin, so it tends to sit up" } }, { id: "C", points: 3, text: { TH: "มีท็อปสปิน/คิกเสิร์ฟ ลูกกระดอนสูงรับยากขึ้น", EN: "Hits with good topspin or kick, making it bounce high" } }, { id: "D", points: 4, text: { TH: "คิกเสิร์ฟหนักหน่วง หรือสไลซ์ฉีกหนีคู่แข่งได้", EN: "Hits heavy kick or slice serves, immediately putting opponents on defense" } }] },
+                { id: "d7", category: { TH: "การรับเสิร์ฟ (Return of Serve)", EN: "Return of Serve" }, options: [{ id: "A", points: 1, text: { TH: "เจอลูกเสิร์ฟเร็วๆ จะแหย่ไม้รับไม่ค่อยทัน", EN: "Struggles with fast pace, often just blocking wildly" } }, { id: "B", points: 2, text: { TH: "รีเทิร์นลูกเสิร์ฟทั่วไปได้ แต่คุมทิศทางลำบาก", EN: "Can return average serves consistently, but struggles with placement" } }, { id: "C", points: 3, text: { TH: "ก้าวเข้าสนามเพื่อตบเสิร์ฟสองที่อ่อนแอได้", EN: "Confidently steps in to attack weak second serves" } }, { id: "D", points: 4, text: { TH: "รับลูกเสิร์ฟแรงๆ ให้กลับไปตกลึกท้ายคอร์ตได้", EN: "Easily neutralizes heavy first serves with deep returns" } }] },
+                { id: "d8", category: { TH: "ทักษะหน้าเน็ต (Volley)", EN: "Net Play & Transition" }, options: [{ id: "A", points: 1, text: { TH: "จับไม้แบบโฟร์แฮนด์มารับวอลเลย์ รู้สึกไม่มั่นใจ", EN: "Uncomfortable at the net, often volleying with a groundstroke grip" } }, { id: "B", points: 2, text: { TH: "วอลเลย์ลูกระดับอกได้ แต่ลูกต่ำๆ จะงัดไม่ค่อยขึ้น", EN: "Solid on chest-high volleys, but struggles digging out low ones" } }, { id: "C", points: 3, text: { TH: "จับแบบ Continental ต่อยลูกวอลเลย์คุมทิศทางได้", EN: "Uses a continental grip with good directional control and punch" } }, { id: "D", points: 4, text: { TH: "หยอดหน้าเน็ต (Drop Volley) และจบแต้มได้เฉียบขาด", EN: "Decisively finishes points with crisp volleys and touch (drop volleys)" } }] },
+                { id: "d9", category: { TH: "ลูกตบเหนือหัว (Overhead)", EN: "Overhead Execution" }, options: [{ id: "A", points: 1, text: { TH: "กะจังหวะพลาดบ่อย หรือต้องปล่อยให้ลูกตกพื้นก่อน", EN: "Poor timing, usually lets the ball bounce before hitting" } }, { id: "B", points: 2, text: { TH: "ตบลูกง่ายๆ ได้ แต่มักจะพลาดถ้าต้องถอยหลังตบ", EN: "Can put away easy lobs, but struggles when backpedaling" } }, { id: "C", points: 3, text: { TH: "ตบลูกได้ชัวร์แม้ยืนอยู่บริเวณเส้นเสิร์ฟ (Service Line)", EN: "Very reliable, even when hitting overheads from the service line" } }, { id: "D", points: 4, text: { TH: "กระโดดตบ (Scissor kick) หรือทำแต้มได้จากทุกจุด", EN: "Highly offensive; can hit scissor-kick overheads from almost anywhere" } }] },
+                { id: "d10", category: { TH: "การงัดลูกล็อบและการตั้งรับ", EN: "Defense & Lobs" }, options: [{ id: "A", points: 1, text: { TH: "เมื่อเสียเปรียบ มักจะตีลูกโด่งสั้นๆ โดนดักตบ", EN: "Throws up short, defensive lobs that get easily put away" } }, { id: "B", points: 2, text: { TH: "งัดลูกล็อบโด่งเพื่อซื้อเวลาให้ตัวเองกลับมาตั้งหลักได้", EN: "Hits high, deep defensive lobs to buy time and reset the point" } }, { id: "C", points: 3, text: { TH: "ตีลูกท็อปสปินล็อบข้ามหัวคนขึ้นเน็ตได้", EN: "Can hit offensive topspin lobs effectively over the net player" } }, { id: "D", points: 4, text: { TH: "วิ่งสุดคอร์ตแล้วสวนกลับด้วย Passing Shot ได้ลุ้นเสมอ", EN: "Exceptional defense; constantly hits passing shots while on the dead run" } }] },
+                { id: "d11", category: { TH: "จังหวะฝีเท้า (Footwork)", EN: "Footwork & Movement" }, options: [{ id: "A", points: 1, text: { TH: "ตีเสร็จแล้วมักจะยืนดูบอล ไม่วิ่งกลับมารอตรงกลาง", EN: "Tends to ball-watch after hitting, leading to slow recovery" } }, { id: "B", points: 2, text: { TH: "ครอบคลุมพื้นที่คอร์ตเดี่ยวได้ดี แต่ก้าวเท้ายังช้า", EN: "Covers the court reasonably well, but can be a bit heavy-footed" } }, { id: "C", points: 3, text: { TH: "ทำ Split-step สม่ำเสมอ และกลับเข้าตำแหน่งเร็ว", EN: "Always uses a split-step and recovers quickly to the center" } }, { id: "D", points: 4, text: { TH: "ออกตัวเร็วมาก สไลด์เท้าหรือปรับก้าวเล็กๆ ก่อนตีได้เนียน", EN: "Explosive first step with excellent micro-adjustments before striking" } }] },
+                { id: "d12", category: { TH: "วิสัยทัศน์และแทคติก", EN: "Match IQ & Tactics" }, options: [{ id: "A", points: 1, text: { TH: "โฟกัสแค่วงสวิงตัวเอง ไม่ทันได้สังเกตคู่แข่ง", EN: "Focuses entirely on own swing mechanics, not the opponent" } }, { id: "B", points: 2, text: { TH: "เล่นแบบ Play Safe ตีโต้ไปเรื่อยๆ รอคู่แข่งพลาด", EN: "Plays 'safe' and mostly just waits for the opponent to make an error" } }, { id: "C", points: 3, text: { TH: "หาจุดอ่อนคู่แข่งเจอ (เช่น แบ็คแฮนด์อ่อน) และเจาะตรงนั้น", EN: "Quickly identifies and consistently targets the opponent's weaknesses" } }, { id: "D", points: 4, text: { TH: "สร้างรูปแบบการเข้าทำได้ และเปลี่ยนแผนแก้เกมได้ทันที", EN: "Strategically constructs points and easily adapts tactics mid-match" } }] }
             ]
         };
 
@@ -371,7 +200,7 @@
             const progress = questions ? ((currentQuestionIndex + 1) / questions.length) * 100 : 0;
 
             return (
-                <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden">
+                <div className="min-h-screen bg-slate-50 text-slate-900 overflow-x-hidden selection-blue">
                     <nav className="flex items-center justify-between px-6 py-4 bg-white shadow-[0_4px_0_0_rgba(226,232,240,1)] sticky top-0 z-50">
                         <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('welcome')}>
                             <div className="text-3xl font-bold tracking-wide flex items-center z-10 font-fredoka">
